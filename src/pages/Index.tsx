@@ -104,8 +104,8 @@ const Index = () => {
 
               {/* Subtitle */}
               <p className="text-xl sm:text-3xl text-gray-200 mb-10 max-w-3xl mx-auto font-light leading-relaxed drop-shadow-lg">
-                The ultimate companion for the World Cup. <br className="hidden sm:block" />
-                Comment. Vote. React. <span className="text-emerald-400 font-semibold">Live.</span>
+                Join our growing cricket community. <br className="hidden sm:block" />
+                Comment. Vote. React. <span className="text-emerald-400 font-semibold">Together.</span>
               </p>
 
               {/* CTA Buttons */}
@@ -138,10 +138,10 @@ const Index = () => {
               {/* Stats Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 mt-20 max-w-4xl mx-auto">
                 {[
-                  { icon: Users, label: 'Active Fans', value: '125K+' },
-                  { icon: MessageCircle, label: 'Comments Today', value: '45K' },
-                  { icon: TrendingUp, label: 'Polls Active', value: '24' },
-                  { icon: Trophy, label: 'Predictions', value: '89K' },
+                  { icon: Users, label: 'Growing Community', value: '500+' },
+                  { icon: MessageCircle, label: 'Daily Chats', value: '150+' },
+                  { icon: TrendingUp, label: 'Active Polls', value: '12' },
+                  { icon: Trophy, label: 'New Predictions', value: '200+' },
                 ].map((stat, idx) => (
                   <motion.div
                     key={stat.label}
@@ -231,7 +231,7 @@ const Index = () => {
               <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
                 TRENDING POLLS
               </h2>
-              <p className="text-muted-foreground mt-2">Have your say, see what fans think</p>
+              <p className="text-muted-foreground mt-2">Join our growing cricket community</p>
             </div>
             <Link to="/polls" className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1 text-sm font-medium">
               All Polls <ArrowRight className="w-4 h-4" />
@@ -252,7 +252,7 @@ const Index = () => {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                  COMMUNITY HIGHLIGHTS
+                  GROWING COMMUNITY
                 </h2>
               </div>
 
@@ -299,7 +299,7 @@ const Index = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
                   <Trophy className="w-6 h-6 text-cricket-gold" />
-                  TOP FANS
+                  EARLY SUPPORTERS
                 </h2>
                 <Link to="/leaderboard" className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1 text-sm font-medium">
                   Full Leaderboard <ArrowRight className="w-4 h-4" />

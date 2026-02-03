@@ -359,7 +359,7 @@ const T20WorldCup = () => {
                     T20 WC Leaderboard
                   </h3>
                   <span className="text-[11px] text-muted-foreground uppercase tracking-wide">
-                    Top Fans
+                    Top Early Supporters
                   </span>
                 </div>
                 <div className="space-y-2">

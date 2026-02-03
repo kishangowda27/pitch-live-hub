@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,6 +14,7 @@ import {
   Users,
   LogIn,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCurrentMatches } from "@/services/api";
@@ -32,8 +33,24 @@ const navItems = [
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   const { data: liveMatches = [] } = useQuery({
     queryKey: ["currentMatches"],
     queryFn: async () => {
@@ -95,6 +112,74 @@ export const Navbar = () => {
             {navItems.slice(0, 6).map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
+              
+              // Handle Profile with dropdown
+              if (item.path === "/profile" && user) {
+                return (
+                  <div key={item.path} className="relative" ref={profileRef}>
+                    <button
+                      onClick={() => setIsProfileOpen(!isProfileOpen)}
+                      className={`relative px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-300 text-xs font-medium ${
+                        isActive
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="hidden xl:inline">{user.name || "Profile"}</span>
+                      <ChevronDown className="w-3 h-3" />
+                      {isActive && (
+                        <motion.div
+                          layoutId="navbar-indicator"
+                          className="absolute inset-0 bg-primary/10 border border-primary/30 rounded-lg -z-10"
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                    </button>
+                    
+                    {/* Profile Dropdown */}
+                    <AnimatePresence>
+                      {isProfileOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute right-0 top-full mt-2 w-48 bg-background/95 backdrop-blur-xl border border-border rounded-lg shadow-lg z-50"
+                        >
+                          <div className="p-2">
+                            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border">
+                              {user.email}
+                            </div>
+                            <Link
+                              to="/profile"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent rounded-lg transition-colors"
+                            >
+                              <User className="w-4 h-4" />
+                              View Profile
+                            </Link>
+                            <button
+                              onClick={() => {
+                                signOut();
+                                setIsProfileOpen(false);
+                              }}
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent rounded-lg transition-colors w-full text-left"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              Sign Out
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+              
               return (
                 <Link
                   key={item.path}
@@ -135,39 +220,24 @@ export const Navbar = () => {
               <span className="sm:hidden">{liveCount}</span>
             </div>
             
-            {/* Auth Buttons */}
-            <div className="hidden md:flex items-center gap-1">
-              {user ? (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground max-w-20 truncate">
-                    {user.name || user.email}
-                  </span>
-                  <button
-                    onClick={signOut}
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
-                  >
-                    <LogOut className="w-3 h-3" />
-                    <span className="hidden lg:inline">Out</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Link
-                    to="/login"
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
-                  >
-                    <LogIn className="w-3 h-3" />
-                    <span className="hidden lg:inline">Sign In</span>
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all"
-                  >
-                    <span>Sign Up</span>
-                  </Link>
-                </div>
-              )}
-            </div>
+            {/* Auth Buttons - Only show if not logged in */}
+            {!user && (
+              <div className="hidden md:flex items-center gap-1">
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
+                >
+                  <LogIn className="w-3 h-3" />
+                  <span className="hidden lg:inline">Sign In</span>
+                </Link>
+                <Link
+                  to="/signup"
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all"
+                >
+                  <span>Sign Up</span>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}

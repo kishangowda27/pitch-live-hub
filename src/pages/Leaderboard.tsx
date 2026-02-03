@@ -23,7 +23,7 @@ const Leaderboard = () => {
             <span className="text-gradient-primary">LEADERBOARD</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Earn points by commenting, voting, and making predictions
+            Our early supporters earning points by engaging with the community
           </p>
         </motion.div>
 
