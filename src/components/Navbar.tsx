@@ -109,10 +109,13 @@ export const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
-            {navItems.filter(item => 
+            {navItems.filter(item => {
               // Show all items except Series on desktop to make room for Profile
-              item.path !== "/series"
-            ).map((item) => {
+              // Only show Profile if user is authenticated
+              if (item.path === "/series") return false;
+              if (item.path === "/profile" && !user) return false;
+              return true;
+            }).map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
               
@@ -263,6 +266,12 @@ export const Navbar = () => {
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
+                
+                // Skip profile in mobile menu if user is not logged in
+                if (item.path === "/profile" && !user) {
+                  return null;
+                }
+                
                 return (
                   <Link
                     key={item.path}

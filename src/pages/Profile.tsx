@@ -55,10 +55,33 @@ interface DbUserSettings {
 }
 
 const Profile = () => {
-  const { signOut, user: authUser } = useAuth();
+  const { signOut, user: authUser, loading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const userId = authUser?.id || 'current';
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !authUser) {
+      navigate('/login');
+    }
+  }, [authUser, loading, navigate]);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <p className="text-muted-foreground text-lg">Loading...</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!authUser) {
+    return null;
+  }
 
   // Load user profile from Insforge database
   const { data: dbProfile, isLoading: profileLoading } = useQuery({
