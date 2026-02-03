@@ -24,15 +24,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadSession = async () => {
     setLoading(true);
-    const { data } = await insforge.auth.getCurrentSession();
-    const sessionUser = data.session?.user;
-    if (sessionUser) {
-      setUser({
-        id: sessionUser.id,
-        email: sessionUser.email,
-        name: sessionUser.profile?.name,
-      });
-    } else {
+    try {
+      const { data, error } = await insforge.auth.getCurrentSession();
+      
+      if (error) {
+        console.error('Auth session error:', error);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
+      const sessionUser = data.session?.user;
+      if (sessionUser) {
+        setUser({
+          id: sessionUser.id,
+          email: sessionUser.email,
+          name: sessionUser.profile?.name,
+        });
+        console.log('✅ User session loaded:', sessionUser.email);
+      } else {
+        setUser(null);
+        console.log('ℹ️ No active session');
+      }
+    } catch (err) {
+      console.error('Failed to load session:', err);
       setUser(null);
     }
     setLoading(false);
@@ -43,8 +58,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const handleSignOut = async () => {
-    await insforge.auth.signOut();
-    setUser(null);
+    try {
+      await insforge.auth.signOut();
+      setUser(null);
+      console.log('✅ User signed out');
+    } catch (err) {
+      console.error('Sign out error:', err);
+      // Still clear user state even if API call fails
+      setUser(null);
+    }
   };
 
   return (

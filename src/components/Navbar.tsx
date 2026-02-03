@@ -12,9 +12,12 @@ import {
   Calendar,
   List,
   Users,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCurrentMatches } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { path: "/", label: "Home", icon: Home },
@@ -30,6 +33,7 @@ const navItems = [
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const { data: liveMatches = [] } = useQuery({
     queryKey: ["currentMatches"],
     queryFn: async () => {
@@ -119,7 +123,7 @@ export const Navbar = () => {
             })}
           </div>
 
-          {/* Live Badge */}
+          {/* Live Badge & Auth */}
           <div className="hidden md:flex items-center gap-4">
             <div className="badge-live">
               <span className="relative flex h-2 w-2">
@@ -128,6 +132,38 @@ export const Navbar = () => {
               </span>
               {liveCount} LIVE
             </div>
+            
+            {/* Auth Buttons */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Hi, {user.name || user.email}
+                </span>
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -169,7 +205,7 @@ export const Navbar = () => {
                   </Link>
                 );
               })}
-              <div className="pt-2 border-t border-border flex items-center justify-between">
+              <div className="pt-2 border-t border-border flex flex-col gap-2">
                 <div className="badge-live w-fit">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -177,6 +213,44 @@ export const Navbar = () => {
                   </span>
                   {liveCount} LIVE MATCHES
                 </div>
+                
+                {/* Mobile Auth */}
+                {user ? (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground px-4">
+                      Hi, {user.name || user.email}
+                    </span>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setIsOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      <span className="font-medium">Sign Out</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+                    >
+                      <LogIn className="w-5 h-5" />
+                      <span className="font-medium">Sign In</span>
+                    </Link>
+                    <Link
+                      to="/signup"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="font-medium">Sign Up</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
