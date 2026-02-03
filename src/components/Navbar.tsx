@@ -151,12 +151,9 @@ export const Navbar = () => {
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          className="absolute right-0 top-full mt-2 w-48 bg-background/95 backdrop-blur-xl border border-border rounded-lg shadow-lg z-50"
+                          className="absolute right-0 top-full mt-2 w-44 bg-background/95 backdrop-blur-xl border border-border rounded-lg shadow-lg z-50"
                         >
                           <div className="p-2">
-                            <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border">
-                              {user.email}
-                            </div>
                             <Link
                               to="/profile"
                               onClick={() => setIsProfileOpen(false)}
