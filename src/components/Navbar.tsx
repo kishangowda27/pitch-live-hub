@@ -109,7 +109,10 @@ export const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
-            {navItems.slice(0, 6).map((item) => {
+            {navItems.filter(item => 
+              // Show all items except Series on desktop to make room for Profile
+              item.path !== "/series"
+            ).map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
               
