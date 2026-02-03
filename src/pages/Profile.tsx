@@ -162,6 +162,7 @@ const Profile = () => {
   useEffect(() => {
     if (dbProfile) {
       setProfileUser(dbProfile);
+      setTempUsername(dbProfile.username);
       // Also save to localStorage as backup
       localStorage.setItem('userProfile', JSON.stringify(dbProfile));
     } else if (!authUser?.id) {
@@ -169,15 +170,20 @@ const Profile = () => {
       const saved = localStorage.getItem('userProfile');
       if (saved) {
         try {
-          setProfileUser(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          setProfileUser(parsed);
+          setTempUsername(parsed.username);
         } catch {
           setProfileUser(defaultUser);
+          setTempUsername(defaultUser.username);
         }
       }
     }
   }, [dbProfile, authUser?.id]);
 
   const [showSettings, setShowSettings] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempUsername, setTempUsername] = useState(profileUser.username);
   
   // Initialize settings form from database or defaults
   const [settingsForm, setSettingsForm] = useState(() => {
@@ -340,6 +346,74 @@ const Profile = () => {
     navigate("/");
   };
 
+  const handleNameEdit = () => {
+    setIsEditingName(true);
+    setTempUsername(profileUser.username);
+  };
+
+  const handleNameSave = async () => {
+    if (tempUsername.trim() && tempUsername !== profileUser.username) {
+      const updatedProfile = {
+        ...profileUser,
+        username: tempUsername.trim(),
+      };
+      
+      setProfileUser(updatedProfile);
+      
+      // Save to localStorage as backup
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+
+      // Save to Insforge database if user is logged in
+      if (authUser?.id) {
+        try {
+          const profileData = {
+            user_id: authUser.id,
+            username: tempUsername.trim(),
+            avatar: profileUser.avatar,
+            points: profileUser.points,
+            rank: profileUser.rank,
+            comments_count: profileUser.commentsCount,
+            votes_count: profileUser.votesCount,
+            predictions_correct: profileUser.predictionsCorrect,
+            predictions_total: profileUser.predictionsTotal,
+            joined_at: profileUser.joinedAt,
+            badges: profileUser.badges.map((b) => b.id),
+            updated_at: new Date().toISOString(),
+          };
+
+          const { error: profileError } = await insforge.database
+            .from('user_profiles')
+            .upsert(profileData, {
+              onConflict: 'user_id',
+            });
+
+          if (profileError) {
+            console.error('Failed to save profile to database', profileError);
+          } else {
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ['userProfile', userId] });
+          }
+        } catch (error) {
+          console.error('Error saving to database', error);
+        }
+      }
+    }
+    setIsEditingName(false);
+  };
+
+  const handleNameCancel = () => {
+    setTempUsername(profileUser.username);
+    setIsEditingName(false);
+  };
+
+  const handleNameKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleNameSave();
+    } else if (e.key === 'Escape') {
+      handleNameCancel();
+    }
+  };
+
   if (profileLoading) {
     return (
       <MainLayout>
@@ -376,9 +450,28 @@ const Profile = () => {
 
             {/* Info */}
             <div className="flex-1 text-center sm:text-left">
-              <h1 className="font-display text-3xl sm:text-4xl font-bold text-white mb-2">
-                {profileUser.username}
-              </h1>
+              {isEditingName ? (
+                <div className="mb-2">
+                  <input
+                    type="text"
+                    value={tempUsername}
+                    onChange={(e) => setTempUsername(e.target.value)}
+                    onKeyDown={handleNameKeyPress}
+                    onBlur={handleNameSave}
+                    className="font-display text-3xl sm:text-4xl font-bold text-white bg-transparent border-b-2 border-primary focus:outline-none focus:border-primary-light text-center sm:text-left"
+                    autoFocus
+                    maxLength={20}
+                  />
+                </div>
+              ) : (
+                <h1 
+                  className="font-display text-3xl sm:text-4xl font-bold text-white mb-2 cursor-pointer hover:text-primary transition-colors"
+                  onClick={handleNameEdit}
+                  title="Click to edit name"
+                >
+                  {profileUser.username}
+                </h1>
+              )}
               <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
                 <Calendar className="w-4 h-4" />
                 Joined{" "}
@@ -407,12 +500,6 @@ const Profile = () => {
 
             {/* Actions */}
             <div className="flex gap-2">
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
-              >
-                <Settings className="w-5 h-5 text-muted-foreground" />
-              </button>
               <button
                 onClick={handleSignOutClick}
                 className="p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
