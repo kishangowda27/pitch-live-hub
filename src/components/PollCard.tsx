@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Clock, TrendingUp, Users } from 'lucide-react';
 import type { Poll, PollOption } from '@/data/polls';
+import { insforge } from '@/lib/insforgeClient';
 
 interface PollCardProps {
   poll: Poll;
@@ -13,10 +14,20 @@ export const PollCard = ({ poll, index = 0, compact = false }: PollCardProps) =>
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
 
-  const handleVote = (optionId: string) => {
+  const handleVote = async (optionId: string) => {
     if (hasVoted) return;
     setSelectedOption(optionId);
     setHasVoted(true);
+
+    try {
+      await insforge.database.from('poll_votes').insert([{
+        poll_id: poll.id,
+        user_id: 'anonymous', // Since we removed auth, use anonymous user
+        selected_option: optionId,
+      }]);
+    } catch (error) {
+      console.error('Failed to record vote', error);
+    }
   };
 
   const getPercentage = (option: PollOption) => {

@@ -122,6 +122,58 @@ export const comments: Comment[] = [
     ],
     matchId: '1',
   },
+  {
+    id: '9',
+    userId: 'u9',
+    username: 'CricketLover',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lover',
+    message: 'This is going to be a close finish! Both teams playing brilliantly! 🎯',
+    timestamp: '2026-02-03T14:10:00Z',
+    reactions: [
+      { emoji: '🎯', count: 42 },
+      { emoji: '👏', count: 28 },
+    ],
+    matchId: '1',
+  },
+  {
+    id: '10',
+    userId: 'u10',
+    username: 'MatchWatcher',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Watcher',
+    message: 'Can\'t believe that catch! Absolutely stunning! 🤯',
+    timestamp: '2026-02-03T14:05:00Z',
+    reactions: [
+      { emoji: '🤯', count: 89 },
+      { emoji: '🔥', count: 56 },
+    ],
+    matchId: '1',
+  },
+  {
+    id: '11',
+    userId: 'u11',
+    username: 'EngSupporter',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eng',
+    message: 'England looking strong! Root is in great form! 🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+    timestamp: '2026-02-03T13:55:00Z',
+    reactions: [
+      { emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', count: 34 },
+      { emoji: '💪', count: 22 },
+    ],
+    matchId: '2',
+  },
+  {
+    id: '12',
+    userId: 'u12',
+    username: 'SACricketFan',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=SA',
+    message: 'Rabada on fire! What a spell! 🔥🇿🇦',
+    timestamp: '2026-02-03T13:50:00Z',
+    reactions: [
+      { emoji: '🔥', count: 67 },
+      { emoji: '🇿🇦', count: 45 },
+    ],
+    matchId: '2',
+  },
 ];
 
 export const getCommentsByMatchId = (matchId: string): Comment[] => {

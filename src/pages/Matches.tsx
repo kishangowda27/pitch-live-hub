@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { MainLayout } from '@/layouts/MainLayout';
 import { MatchCard } from '@/components/MatchCard';
-import { matches } from '@/data/matches';
+import { fetchLiveMatches } from '@/services/api';
+import { matches as dummyMatches } from '@/data/matches';
 
 type FilterType = 'all' | 'live' | 'upcoming' | 'completed';
 
@@ -16,7 +18,29 @@ const filters: { key: FilterType; label: string; color: string }[] = [
 const Matches = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
-  const filteredMatches = matches.filter((match) => {
+  const { data: allMatches = [], isLoading } = useQuery({
+    queryKey: ['matches'],
+    queryFn: async () => {
+      try {
+        const matches = await fetchLiveMatches();
+        if (matches.length > 0) return matches;
+      } catch (error) {
+        console.error('Failed to fetch matches from API', error);
+      }
+      // Always fallback to dummy data if API fails or returns empty
+      return dummyMatches;
+    },
+    refetchInterval: 60_000,
+  });
+
+  // Restrict this page to World Cup 2026 matches only (by calendar year 2026).
+  const wc2026Matches = allMatches.filter((match) => {
+    if (!match.date) return false;
+    const year = new Date(match.date).getFullYear();
+    return year === 2026;
+  });
+
+  const filteredMatches = wc2026Matches.filter((match) => {
     if (activeFilter === 'all') return true;
     return match.status === activeFilter;
   });
@@ -30,7 +54,7 @@ const Matches = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4">
             WC 2026 <span className="text-gradient-primary">MATCHES</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -48,7 +72,7 @@ const Matches = () => {
               className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all ${
                 activeFilter === filter.key
                   ? `${filter.color} ring-2 ring-white/20`
-                  : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'
+                  : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
               }`}
             >
               {filter.key === 'live' && activeFilter === filter.key && (
@@ -65,7 +89,15 @@ const Matches = () => {
 
       {/* Matches Grid */}
       <section className="pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {filteredMatches.length === 0 ? (
+        {isLoading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <p className="text-muted-foreground text-lg">Loading matches...</p>
+          </motion.div>
+        ) : filteredMatches.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

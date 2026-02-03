@@ -1,26 +1,32 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, TrendingUp, Clock, CheckCircle } from 'lucide-react';
-import { MainLayout } from '@/layouts/MainLayout';
-import { PollCard } from '@/components/PollCard';
-import { polls, getActivePolls, getTrendingPolls } from '@/data/polls';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { MainLayout } from "@/layouts/MainLayout";
+import { PollCard } from "@/components/PollCard";
+import { polls as dummyPolls } from "@/data/polls";
+import type { Poll } from "@/data/polls";
 
-type FilterType = 'all' | 'active' | 'trending' | 'completed';
+type FilterType = "all" | "active" | "trending" | "completed";
 
 const Polls = () => {
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newPollQuestion, setNewPollQuestion] = useState('');
-  const [newPollOptions, setNewPollOptions] = useState(['', '', '']);
+  const [newPollQuestion, setNewPollQuestion] = useState("");
+  const [newPollOptions, setNewPollOptions] = useState<string[]>(["", "", ""]);
+  const [localPolls, setLocalPolls] = useState<Poll[]>(dummyPolls);
+
+  // Use local polls state
+  const polls = localPolls;
+  const isLoading = false;
 
   const getFilteredPolls = () => {
     switch (activeFilter) {
-      case 'active':
-        return getActivePolls();
-      case 'trending':
-        return getTrendingPolls();
-      case 'completed':
-        return polls.filter((p) => p.status === 'closed');
+      case "active":
+        return polls.filter((p) => p.status === "active");
+      case "trending":
+        return [...polls].sort((a, b) => b.totalVotes - a.totalVotes);
+      case "completed":
+        return polls.filter((p) => p.status === "closed");
       default:
         return polls;
     }
@@ -29,17 +35,64 @@ const Polls = () => {
   const filteredPolls = getFilteredPolls();
 
   const handleCreatePoll = () => {
-    // Just reset for demo
-    setNewPollQuestion('');
-    setNewPollOptions(['', '', '']);
+    const options = newPollOptions
+      .map((text) => text.trim())
+      .filter((text) => text.length > 0)
+      .map((text, idx) => ({ 
+        id: `opt-${Date.now()}-${idx}`, 
+        text, 
+        votes: 0 
+      }));
+
+    if (!newPollQuestion.trim() || options.length < 2) {
+      alert("Please enter a question and at least 2 options");
+      return;
+    }
+
+    const newPoll: Poll = {
+      id: `poll-${Date.now()}`,
+      question: newPollQuestion.trim(),
+      options,
+      totalVotes: 0,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      endsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+      category: 'fun',
+    };
+
+    // Add new poll to the beginning of the list
+    setLocalPolls([newPoll, ...localPolls]);
+    
+    // Reset form
+    setNewPollQuestion("");
+    setNewPollOptions(["", "", ""]);
     setShowCreateModal(false);
+    
+    console.log("Created new poll:", newPoll);
+  };
+
+  const addOption = () => {
+    setNewPollOptions([...newPollOptions, ""]);
+  };
+
+  const updateOption = (index: number, value: string) => {
+    const updated = [...newPollOptions];
+    updated[index] = value;
+    setNewPollOptions(updated);
+  };
+
+  const removeOption = (index: number) => {
+    if (newPollOptions.length > 2) {
+      const updated = newPollOptions.filter((_, i) => i !== index);
+      setNewPollOptions(updated);
+    }
   };
 
   const filters: { key: FilterType; label: string; icon: any }[] = [
-    { key: 'all', label: 'All Polls', icon: null },
-    { key: 'active', label: 'Active', icon: Clock },
-    { key: 'trending', label: 'Trending', icon: TrendingUp },
-    { key: 'completed', label: 'Completed', icon: CheckCircle },
+    { key: "all", label: "All Polls", icon: null },
+    { key: "active", label: "Active", icon: Clock },
+    { key: "trending", label: "Trending", icon: TrendingUp },
+    { key: "completed", label: "Completed", icon: CheckCircle },
   ];
 
   return (
@@ -51,7 +104,7 @@ const Polls = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4">
             FAN <span className="text-gradient-primary">POLLS</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -72,8 +125,8 @@ const Polls = () => {
                   onClick={() => setActiveFilter(filter.key)}
                   className={`px-4 py-2 rounded-xl font-medium text-sm transition-all flex items-center gap-2 ${
                     activeFilter === filter.key
-                      ? 'bg-primary/20 text-primary ring-2 ring-primary/30'
-                      : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'
+                      ? "bg-primary/20 text-primary ring-2 ring-primary/30"
+                      : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground"
                   }`}
                 >
                   {Icon && <Icon className="w-4 h-4" />}
@@ -97,7 +150,15 @@ const Polls = () => {
 
       {/* Polls Grid */}
       <section className="pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {filteredPolls.length === 0 ? (
+        {isLoading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <p className="text-muted-foreground text-lg">Loading polls...</p>
+          </motion.div>
+        ) : filteredPolls.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -128,11 +189,13 @@ const Polls = () => {
             className="glass-card p-6 w-full max-w-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="font-display text-2xl font-bold text-white mb-6">Create a Poll</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-6">
+              Create a Poll
+            </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Question
                 </label>
                 <input
@@ -145,27 +208,32 @@ const Polls = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Options
                 </label>
                 <div className="space-y-2">
                   {newPollOptions.map((option, idx) => (
-                    <input
-                      key={idx}
-                      type="text"
-                      value={option}
-                      onChange={(e) => {
-                        const updated = [...newPollOptions];
-                        updated[idx] = e.target.value;
-                        setNewPollOptions(updated);
-                      }}
-                      placeholder={`Option ${idx + 1}`}
-                      className="input-field w-full"
-                    />
+                    <div key={idx} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(e) => updateOption(idx, e.target.value)}
+                        placeholder={`Option ${idx + 1}`}
+                        className="input-field flex-1"
+                      />
+                      {newPollOptions.length > 2 && (
+                        <button
+                          onClick={() => removeOption(idx)}
+                          className="px-3 py-2 text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
                 <button
-                  onClick={() => setNewPollOptions([...newPollOptions, ''])}
+                  onClick={addOption}
                   className="mt-2 text-sm text-primary hover:underline"
                 >
                   + Add Option
@@ -180,8 +248,8 @@ const Polls = () => {
               >
                 Cancel
               </button>
-              <button
-                onClick={handleCreatePoll}
+              <button 
+                onClick={handleCreatePoll} 
                 className="btn-primary flex-1"
               >
                 Create Poll

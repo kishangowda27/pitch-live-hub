@@ -2,28 +2,153 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send, TrendingUp, Users, Clock, MapPin, Trophy } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/layouts/MainLayout';
 import { ChatMessage } from '@/components/ChatMessage';
 import { PollCard } from '@/components/PollCard';
 import { ReactionBar } from '@/components/ReactionBar';
-import { getMatchById } from '@/data/matches';
-import { getCommentsByMatchId, comments as allComments } from '@/data/comments';
-import { getPollsByMatchId, polls } from '@/data/polls';
+import { LiveChat } from '@/components/chat/LiveChat';
+import type { Comment } from '@/data/comments';
+import type { Poll } from '@/data/polls';
+import { getPollsByMatchId } from '@/data/polls';
+import { getCommentsByMatchId } from '@/data/comments';
+import { getMatchById, matches as dummyMatches } from '@/data/matches';
+import { fetchLiveMatches } from '@/services/api';
+import { insforge } from '@/lib/insforgeClient';
+import { useAuth } from '@/context/AuthContext';
 
 const MatchDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const match = getMatchById(id || '1');
-  const matchComments = id ? getCommentsByMatchId(id) : allComments;
-  const matchPolls = id ? getPollsByMatchId(id) : polls.slice(0, 3);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: allMatches = [], isLoading } = useQuery({
+    queryKey: ['matches'],
+    queryFn: async () => {
+      try {
+        const matches = await fetchLiveMatches();
+        if (matches.length > 0) return matches;
+      } catch (error) {
+        console.error('Failed to fetch matches from API', error);
+      }
+      // Always fallback to dummy data if API fails or returns empty
+      return dummyMatches;
+    },
+    refetchInterval: 60_000,
+  });
+
+  // Try to find match in allMatches, if not found, try dummy data
+  let match = allMatches.find((m) => m.id === (id ?? ''));
+  
+  // If match not found, try loading from dummy data
+  if (!match && id) {
+    match = getMatchById(id);
+  }
+
+  interface DbMessage {
+    id: string;
+    match_id: string | null;
+    user_id: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    content: string;
+    created_at: string;
+  }
+
+  const { data: dbMessages = [] } = useQuery({
+    queryKey: ['messages', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await insforge.database
+        .from('messages')
+        .select('*')
+        .eq('match_id', id)
+        .order('created_at', { ascending: true });
+      if (error) {
+        console.error('Failed to load messages', error);
+        // Fallback to dummy data
+        return getCommentsByMatchId(id).map((c) => ({
+          id: c.id,
+          match_id: id,
+          user_id: c.userId,
+          username: c.username,
+          avatar_url: c.avatar,
+          content: c.message,
+          created_at: c.timestamp,
+        }));
+      }
+      // If no messages, use dummy data
+      if (!data || data.length === 0) {
+        return getCommentsByMatchId(id).map((c) => ({
+          id: c.id,
+          match_id: id,
+          user_id: c.userId,
+          username: c.username,
+          avatar_url: c.avatar,
+          content: c.message,
+          created_at: c.timestamp,
+        }));
+      }
+      return data as DbMessage[];
+    },
+    enabled: !!id,
+    refetchInterval: 10000,
+  });
+
+  const mappedComments: Comment[] = dbMessages.map((m) => ({
+    id: m.id,
+    userId: m.user_id ?? 'anon',
+    username: m.username ?? 'Cricket Fan',
+    avatar:
+      m.avatar_url ||
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+        m.username || 'fan',
+      )}`,
+    message: m.content,
+    timestamp: m.created_at,
+    reactions: [],
+    matchId: m.match_id ?? undefined,
+  }));
+
+  // Get match polls - with dummy data fallback
+  const matchPolls: Poll[] = id ? getPollsByMatchId(id) : [];
   
   const [message, setMessage] = useState('');
-  const [localComments, setLocalComments] = useState(matchComments);
+  const [localComments, setLocalComments] = useState<Comment[]>(mappedComments);
   const [prediction, setPrediction] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const renderFlag = (flag?: string) => {
+    if (!flag) return null;
+    if (flag.startsWith('http')) {
+      return (
+        <img
+          src={flag}
+          alt="team flag"
+          className="w-10 h-10 rounded-full object-cover border border-white/10"
+        />
+      );
+    }
+    return <span className="text-5xl">{flag}</span>;
+  };
+
+  useEffect(() => {
+    setLocalComments(mappedComments);
+  }, [dbMessages.length]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [localComments]);
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <p className="text-muted-foreground text-lg">Loading match details...</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!match) {
     return (
@@ -40,22 +165,46 @@ const MatchDetail = () => {
     );
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim()) return;
     
-    const newComment = {
-      id: `new-${Date.now()}`,
-      userId: 'current',
-      username: 'CricketFan99',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+    const username =
+      user?.name || user?.email?.split('@')[0] || 'Cricket Fan';
+    const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
+      username,
+    )}`;
+
+    const optimistic: Comment = {
+      id: `local-${Date.now()}`,
+      userId: user?.id ?? 'anon',
+      username,
+      avatar: avatarUrl,
       message: message.trim(),
       timestamp: new Date().toISOString(),
       reactions: [],
       matchId: id,
     };
-    
-    setLocalComments((prev) => [...prev, newComment]);
+
+    setLocalComments((prev) => [...prev, optimistic]);
     setMessage('');
+
+    if (!id) return;
+
+    const { error } = await insforge.database.from('messages').insert([
+      {
+        match_id: id,
+        user_id: user?.id ?? null,
+        username,
+        avatar_url: avatarUrl,
+        content: optimistic.message,
+      },
+    ]);
+
+    if (error) {
+      console.error('Failed to send message', error);
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['messages', id] });
+    }
   };
 
   const handlePrediction = () => {
@@ -152,7 +301,7 @@ const MatchDetail = () => {
                 {/* Team 1 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <span className="text-5xl">{match.team1.flag}</span>
+                    {renderFlag(match.team1.flag)}
                     <div>
                       <p className="font-display text-2xl font-bold text-white">{match.team1.name}</p>
                       <p className="text-sm text-muted-foreground">{match.team1.shortName}</p>
@@ -176,7 +325,7 @@ const MatchDetail = () => {
                 {/* Team 2 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <span className="text-5xl">{match.team2.flag}</span>
+                    {renderFlag(match.team2.flag)}
                     <div>
                       <p className="font-display text-2xl font-bold text-white">{match.team2.name}</p>
                       <p className="text-sm text-muted-foreground">{match.team2.shortName}</p>
@@ -340,6 +489,9 @@ const MatchDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Live Chat Component */}
+      {id && <LiveChat matchId={id} />}
     </MainLayout>
   );
 };

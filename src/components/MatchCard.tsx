@@ -9,6 +9,20 @@ interface MatchCardProps {
 }
 
 export const MatchCard = ({ match, index = 0 }: MatchCardProps) => {
+  const renderFlag = (flag?: string) => {
+    if (!flag) return null;
+    if (flag.startsWith('http')) {
+      return (
+        <img
+          src={flag}
+          alt="team flag"
+          className="w-7 h-7 rounded-full object-cover border border-border"
+        />
+      );
+    }
+    return <span className="text-3xl">{flag}</span>;
+  };
+
   const statusBadge = {
     live: 'badge-live',
     upcoming: 'badge-upcoming',
@@ -50,15 +64,15 @@ export const MatchCard = ({ match, index = 0 }: MatchCardProps) => {
             {/* Team 1 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{match.team1.flag}</span>
+                {renderFlag(match.team1.flag)}
                 <div>
-                  <p className="font-semibold text-white">{match.team1.name}</p>
+                  <p className="font-semibold text-foreground">{match.team1.name}</p>
                   <p className="text-xs text-muted-foreground">{match.team1.shortName}</p>
                 </div>
               </div>
               {match.team1.score && (
                 <div className="text-right">
-                  <p className="font-display text-xl font-bold text-white">{match.team1.score}</p>
+                  <p className="font-display text-xl font-bold text-foreground">{match.team1.score}</p>
                   <p className="text-xs text-muted-foreground">{match.team1.overs} overs</p>
                 </div>
               )}
@@ -66,23 +80,23 @@ export const MatchCard = ({ match, index = 0 }: MatchCardProps) => {
 
             {/* VS Divider */}
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/10"></div>
+              <div className="flex-1 h-px bg-border"></div>
               <span className="text-xs font-bold text-muted-foreground">VS</span>
-              <div className="flex-1 h-px bg-white/10"></div>
+              <div className="flex-1 h-px bg-border"></div>
             </div>
 
             {/* Team 2 */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{match.team2.flag}</span>
+                {renderFlag(match.team2.flag)}
                 <div>
-                  <p className="font-semibold text-white">{match.team2.name}</p>
+                  <p className="font-semibold text-foreground">{match.team2.name}</p>
                   <p className="text-xs text-muted-foreground">{match.team2.shortName}</p>
                 </div>
               </div>
               {match.team2.score && (
                 <div className="text-right">
-                  <p className="font-display text-xl font-bold text-white">{match.team2.score}</p>
+                  <p className="font-display text-xl font-bold text-foreground">{match.team2.score}</p>
                   <p className="text-xs text-muted-foreground">{match.team2.overs} overs</p>
                 </div>
               )}
@@ -90,7 +104,7 @@ export const MatchCard = ({ match, index = 0 }: MatchCardProps) => {
           </div>
 
           {/* Footer */}
-          <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="mt-4 pt-4 border-t border-border">
             {match.status === 'completed' && match.result ? (
               <p className="text-sm text-cricket-green font-medium">{match.result}</p>
             ) : (
