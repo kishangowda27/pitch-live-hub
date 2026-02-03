@@ -82,31 +82,31 @@ export const Navbar = () => {
             onClick={handleLogoClick}
             className="flex items-center gap-2 group"
           >
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center glow-primary">
-              <span className="text-xl">🏏</span>
+            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center glow-primary">
+              <span className="text-lg">🏏</span>
             </div>
-            <span className="font-display text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+            <span className="font-display text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors">
               PITCHLIVE
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => {
+          <div className="hidden lg:flex items-center gap-1">
+            {navItems.slice(0, 6).map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`relative px-3 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 text-sm font-medium ${
+                  className={`relative px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-all duration-300 text-xs font-medium ${
                     isActive
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden lg:inline">{item.label}</span>
+                  <Icon className="w-3.5 h-3.5" />
+                  <span className="hidden xl:inline">{item.label}</span>
                   {isActive && (
                     <motion.div
                       layoutId="navbar-indicator"
@@ -123,55 +123,59 @@ export const Navbar = () => {
             })}
           </div>
 
-          {/* Live Badge & Auth */}
-          <div className="hidden md:flex items-center gap-4">
-            <div className="badge-live">
-              <span className="relative flex h-2 w-2">
+          {/* Right Side - Live Badge & Auth */}
+          <div className="flex items-center gap-2">
+            {/* Live Badge */}
+            <div className="badge-live text-xs px-2 py-1">
+              <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
               </span>
-              {liveCount} LIVE
+              <span className="hidden sm:inline">{liveCount} LIVE</span>
+              <span className="sm:hidden">{liveCount}</span>
             </div>
             
             {/* Auth Buttons */}
-            {user ? (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  Hi, {user.name || user.email}
-                </span>
-                <button
-                  onClick={signOut}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/login"
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
-                >
-                  <LogIn className="w-4 h-4" />
-                  Sign In
-                </Link>
-                <Link
-                  to="/signup"
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all"
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
+            <div className="hidden md:flex items-center gap-1">
+              {user ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground max-w-20 truncate">
+                    {user.name || user.email}
+                  </span>
+                  <button
+                    onClick={signOut}
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    <span className="hidden lg:inline">Out</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all"
+                  >
+                    <LogIn className="w-3 h-3" />
+                    <span className="hidden lg:inline">Sign In</span>
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all"
+                  >
+                    <span>Sign Up</span>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+            className="md:hidden p-1.5 rounded-lg hover:bg-accent transition-colors"
           >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -185,7 +189,7 @@ export const Navbar = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl"
           >
-            <div className="px-4 py-4 space-y-2">
+            <div className="px-4 py-4 space-y-1">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
@@ -194,18 +198,21 @@ export const Navbar = () => {
                     key={item.path}
                     to={item.path}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
                       isActive
                         ? "bg-primary/10 text-primary border border-primary/30"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                     <span className="font-medium">{item.label}</span>
                   </Link>
                 );
               })}
-              <div className="pt-2 border-t border-border flex flex-col gap-2">
+              
+              {/* Mobile Footer */}
+              <div className="pt-3 border-t border-border space-y-2">
+                {/* Live Badge */}
                 <div className="badge-live w-fit">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -216,37 +223,37 @@ export const Navbar = () => {
                 
                 {/* Mobile Auth */}
                 {user ? (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground px-4">
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground px-3">
                       Hi, {user.name || user.email}
-                    </span>
+                    </div>
                     <button
                       onClick={() => {
                         signOut();
                         setIsOpen(false);
                       }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-all w-full"
                     >
-                      <LogOut className="w-5 h-5" />
+                      <LogOut className="w-4 h-4" />
                       <span className="font-medium">Sign Out</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="space-y-2">
                     <Link
                       to="/login"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-all"
                     >
-                      <LogIn className="w-5 h-5" />
+                      <LogIn className="w-4 h-4" />
                       <span className="font-medium">Sign In</span>
                     </Link>
                     <Link
                       to="/signup"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
                     >
-                      <User className="w-5 h-5" />
+                      <User className="w-4 h-4" />
                       <span className="font-medium">Sign Up</span>
                     </Link>
                   </div>
